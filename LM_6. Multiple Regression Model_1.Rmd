@@ -1,0 +1,101 @@
+---
+title: "R Notebook"
+output: 
+  html_notebook: 
+    toc: yes
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+ds = read.csv('SMSA.csv')
+names(ds); attach(ds)
+```
+
+```{r}
+install.packages('nortest')
+library(nortest)
+```
+
+```{r}
+ad.test(Mortality);ad.test(JanTemp)
+```
+
+```{r}
+install.packages('car')
+library(car)
+
+```
+
+```{r}
+scatterplot.matrix(~Mortality+JanTemp+JulyTemp+RelHum+Rain+Education+PopDensity+NonWhite+WC+pop.house+income+HCPot+NOxPot+S02Pot)
+```
+```{r}
+ds2 = cbind(ds, log(JulyTemp), log(PopDensity), sqrt(NonWhite), log(income), log(HCPot), log(NOxPot), log(S02Pot))
+ds2 = ds2[c(-4,-8,-9,-12,-13,-14,-15)]
+```
+
+```{r}
+install.packages('Hmisc')
+library(Hmisc)
+rcorr(as.matrix(ds2[2:15]), type='spearman')
+```
+
+```{r}
+attach(ds2)
+names(ds2)
+
+scatterplotMatrix(~Mortality + JanTemp + log(JulyTemp) + RelHum + Rain + Education + log(PopDensity) + sqrt(NonWhite) + WC + pop.house + log(income) + log(HCPot)+ log(NOxPot) + log(S02Pot))
+```
+
+```{r}
+fit = lm(Mortality ~ JanTemp + log(JulyTemp) + RelHum + Rain + Education + log(PopDensity) + sqrt(NonWhite) + WC + pop.house + log(income) + log(HCPot) + log(NOxPot) + log(S02Pot))
+
+crPlots(fit)
+```
+
+```{r}
+ds3 = ds2[-21,]
+attach(ds2)
+ds3
+```
+
+```{r}
+fit = lm(Mortality ~ JanTemp + log(JulyTemp) + RelHum + Rain + Education + log(PopDensity) + sqrt(NonWhite) + WC + pop.house + log(income) + log(HCPot) + log(NOxPot) + log(S02Pot))
+summary(fit)
+```
+
+```{r}
+y = as.matrix(ds3[,2])                   # variable y creation
+n = length(y)                            # length of y
+one = as.matrix(rep(1,n))                # beta0 creation
+X   = as.matrix(cbind(one, ds3[,3:15]))  # Variable X creation 
+p   = dim(X)[2]-1                        # 
+bhat= solve(t(X)%*%X)%*%t(X)%*%y          # beta-hat estimates (X'X)^-1*X'*y
+bhat
+```
+
+```{r}
+H   = X%*%solve(t(X)%*%X)%*%t(X)                       # Hat matrix
+SSR = t(y)%*%(H-one%*%t(one)/n)%*%y; MSR = SSR/p       # SSR and MSR
+SSE = t(y)%*%(diag(n) - H)%*%y;      MSE = SSE/(n-p-1) # SSE and MSE
+SST = t(y)%*%(diag(n) - one%*%t(one)/n)%*%y
+F   = MSR/MSE                                          # F statistics
+R2  = SST/SST                                          # Descision Coefficient
+aR2 = 1-(SSE/(n-p-1))/(SST/(n-1))                      # adjusted R
+
+```
+
+```{r}
+se = sqrt(MSE*data.frame(as.matrix(diag(solve(crossprod(X))))))
+ts = round(bhat/se,3)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
